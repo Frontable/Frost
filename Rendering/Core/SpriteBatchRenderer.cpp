@@ -45,12 +45,11 @@ void SpriteBatchRenderer::Init()
 void SpriteBatchRenderer::DrawSprite(const vec3 &position, const vec2 &size, float rotation, const Sprite &sprite, float atlasWidth,
                                      float atlasHeight, const vec4 color)
 {
-    // 1. Check if we need to flush the batch BEFORE adding new vertices
+    
     if (m_VertexCount + 4 > MAX_VERTICES)
         Render();
 
-    // 2. Calculate Z-Depth sorting value on the CPU
-    // We use the input 'position.y' to determine depth
+    
     float sortY = position.y + size.y * 0.5f;
 
     // clamp to avoid going outside 0..1
@@ -60,7 +59,7 @@ void SpriteBatchRenderer::DrawSprite(const vec3 &position, const vec2 &size, flo
 
     vec2 halfSize = size * 0.5f;
 
-    // Local coordinates of the quad corners
+    
     vec2 localPositions[4] = {
         {-halfSize.x, halfSize.y}, // bottom left
         {halfSize.x, halfSize.y},  // bottom right
@@ -76,19 +75,19 @@ void SpriteBatchRenderer::DrawSprite(const vec3 &position, const vec2 &size, flo
     {
         float rx = lp.x * c - lp.y * s;
         float ry = lp.x * s + lp.y * c;
-        // Combine rotated offset with world position and our calculated depth
+        
         return vec3{position.x + rx, position.y + ry, depth};
     };
 
     // UV Calculation
     vec2 uvMin = {
         sprite.uv.x / atlasWidth,
-        1.0f - (sprite.uv.y + sprite.size.y) / atlasHeight  // ← flip Y, start from bottom of sprite
+        1.0f - (sprite.uv.y + sprite.size.y) / atlasHeight  
     };
 
     vec2 uvMax = {
         (sprite.uv.x + sprite.size.x) / atlasWidth,
-        1.0f - sprite.uv.y / atlasHeight                     // ← flip Y, end at top of sprite
+        1.0f - sprite.uv.y / atlasHeight                     
     };
 
     vec2 uvs[4] = {
@@ -97,7 +96,7 @@ void SpriteBatchRenderer::DrawSprite(const vec3 &position, const vec2 &size, flo
         {uvMax.x, uvMax.y},
         {uvMin.x, uvMax.y}};
 
-    // 3. Add to vertex array
+    
     for (int i = 0; i < 4; i++)
     {
         m_Vertices[m_VertexCount++] = {
@@ -132,25 +131,25 @@ void SpriteBatchRenderer::genVBO()
 void SpriteBatchRenderer::Render()
 {
     if (m_IndicesCount == 0)
-        return; // Don't draw if batch is empty
+        return; 
 
     //m_Shader->Bind();
-    // Update uProjection here if it changed (or once at start of frame)
+    
 
-    genVBO(); // Upload all vertices at once
+    genVBO();
     glBindVertexArray(m_VAO);
 
     glEnable(GL_DEPTH_TEST);
-    // TIE BREAKER: Newer sprites in the batch win if Y is identical
+
     glDepthFunc(GL_LESS);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // DRAW EVERYTHING IN ONE SHOT
+
     glDrawElements(GL_TRIANGLES, m_IndicesCount, GL_UNSIGNED_INT, 0);
 
-    flush(); // Reset vertex_count and indices_count to 0
+    flush();
 }
 
 void SpriteBatchRenderer::flush()
